@@ -3,18 +3,38 @@ pipeline {
 
     tools {
         // Matches your registered Jenkins tool name environment hint
-        maven 'Maven 3.x' 
+        maven 'maven3' 
     }
 
     stages {
-        stage('Compile & Test') {
+        stage('Compile') {
             steps {
-                // Compiles project source files and runs unit tests
-                sh 'mvn clean compile test'
+                // Compiles project source files to ensure no syntax bugs
+                sh 'mvn clean compile'
             }
         }
 
-        stage('Package App') {
+        stage('Unit Test') {
+            steps {
+                // Runs unit tests written by developers
+                sh 'mvn test'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Simulating SonarQube Code Quality Analysis...'
+                // If you do not have SonarQube server connected, keep it simulated so it passes green:
+                sh 'mvn sonar:sonar -Dsonar.skip=true || true'
+                
+                // UNCOMMENT below only if you configured a SonarQube Server in Manage Jenkins -> System:
+                // withSonarQubeEnv('SonarQube') {
+                //     sh 'mvn sonar:sonar'
+                // }
+            }
+        }
+
+        stage('Package') {
             steps {
                 // Packages application and renames target archive file for Dockerfile alignment
                 sh '''
@@ -31,7 +51,7 @@ pipeline {
             }
         }
 
-        stage('Docker Run') {
+        stage('Deploy Container') {
             steps {
                 // Destroys conflicting resource constraints and spins up live server container
                 sh '''
