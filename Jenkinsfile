@@ -2,43 +2,58 @@ pipeline {
     agent any
 
     tools {
-        // Defines the Maven tool version managed in your Jenkins Global Tool Configuration
+        // Must match the name configured in Jenkins -> Manage Jenkins -> Tools
         maven 'Maven 3.x' 
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Clones the source code from your specific GitHub repository
-                git branch: 'main', url: 'https://github.com/chiraggowda0316/ABC-Technologies.git'
+                git branch: 'main', url: 'https://github.com'
             }
         }
 
         stage('Build') {
             steps {
-                // Cleans target directory and compiles the source code
                 sh 'mvn clean compile'
             }
         }
 
         stage('Test') {
             steps {
-                // Executes unit tests
                 sh 'mvn test'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                // 'SonarQube' must match the server name in Jenkins -> Manage Jenkins -> System
+                withSonarQubeEnv('SonarQube') {
+                    sh 'mvn sonar:sonar'
+                }
             }
         }
 
         stage('Package') {
             steps {
-                // Generates the final executable JAR file, skipping test re-runs
                 sh 'mvn package -DskipTests'
             }
         }
 
         stage('Docker Build') {
             steps {
-                // Builds the Docker image from the local Dockerfile
                 sh 'docker build -t abc-technologies:latest .'
+            }
+        }
+
+        stage('Docker Run') {
+            steps {
+                // Safely stops and removes old container before spinning up the new one
+                sh '''
+                    docker stop abc-app || true
+                    docker rm abc-app || true
+                    docker run -d --name abc-app -p 8080:8080 abc-technologies:latest
+                '''
             }
         }
     }
