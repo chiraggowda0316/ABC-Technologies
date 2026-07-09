@@ -2,61 +2,38 @@ pipeline {
     agent any
 
     tools {
-        // Updated tool name to match your system hint configuration
+        // Matches your registered Jenkins tool name environment hint
         maven 'Maven 3.x' 
     }
 
     stages {
-        stage('Checkout & Setup') {
-            steps {
-                // 1. Clean the workspace of any previous broken attempts
-                cleanWs()
-                
-                // 2. Clone the DevOps scripts to get your Dockerfile
-                dir('infra') {
-                    git branch: 'main', url: 'https://github.com'
-                }
-                
-                // 3. Clone a valid public Java Spring Boot REST app with existing Unit Tests
-                git branch: 'main', url: 'https://github.com'
-                
-                // 4. Move the project structure out of the subfolder into the root workspace
-                sh '''
-                    cp -r complete/pom.xml .
-                    cp -r complete/src .
-                    cp infra/Dockerfile .
-                '''
-            }
-        }
-
         stage('Compile & Test') {
             steps {
-                // Compiles code and runs existing unit tests written by developers
+                // Compiles project source files and runs unit tests
                 sh 'mvn clean compile test'
             }
         }
 
-        stage('Package') {
+        stage('Package App') {
             steps {
-                // Generates the final application artifact inside target/
-                // Modifies the final name to match what your Dockerfile expects (student.jar)
+                // Packages application and renames target archive file for Dockerfile alignment
                 sh '''
                     mvn package -DskipTests
-                    mv target/*.jar target/student.jar || true
+                    mv target/*.jar target/student.jar
                 '''
             }
         }
 
         stage('Docker Build') {
             steps {
-                // Builds the docker image locally using the copied Dockerfile
+                // Assembles the isolated application system image file locally
                 sh 'docker build -t abc-technologies:latest .'
             }
         }
 
         stage('Docker Run') {
             steps {
-                // Safely stops any previous apps and starts the newly built container
+                // Destroys conflicting resource constraints and spins up live server container
                 sh '''
                     docker stop abc-app || true
                     docker rm abc-app || true
