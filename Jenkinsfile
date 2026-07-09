@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         // Updated tool name to match your system hint configuration
-        maven 'maven3' 
+        maven 'Maven 3.x' 
     }
 
     stages {
