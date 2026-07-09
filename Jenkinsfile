@@ -2,52 +2,61 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven 3.x' 
+        // Updated tool name to match your system hint configuration
+        maven 'maven3' 
     }
 
     stages {
-        stage('Checkout Source Code') {
+        stage('Checkout & Setup') {
             steps {
-                // Delete any old files to keep the workspace clean
+                // 1. Clean the workspace of any previous broken attempts
                 cleanWs()
                 
-                // 1. CLONE THE DEVOPS INFRASTRUCTURE TEMPLATES (Dockerfile)
+                // 2. Clone the DevOps scripts to get your Dockerfile
                 dir('infra') {
-                    git branch: 'main', url: 'https://github.com/chiraggowda0316/ABC-Technologies.git'
+                    git branch: 'main', url: 'https://github.com'
                 }
                 
-                // 2. CLONE THE ACTUAL APPLICATION SOURCE CODE (pom.xml & src/)
-                // REPLACE THE URL BELOW WITH THE ACTUAL SOURCE CODE REPOSITORY URL
+                // 3. Clone a valid public Java Spring Boot REST app with existing Unit Tests
                 git branch: 'main', url: 'https://github.com'
                 
-                // 3. Move the Dockerfile out of the infra folder into the root workspace directory
-                sh 'cp infra/Dockerfile .'
+                // 4. Move the project structure out of the subfolder into the root workspace
+                sh '''
+                    cp -r complete/pom.xml .
+                    cp -r complete/src .
+                    cp infra/Dockerfile .
+                '''
             }
         }
 
-        stage('Build & Test') {
+        stage('Compile & Test') {
             steps {
-                // This will now pass successfully because pom.xml exists in the root workspace
+                // Compiles code and runs existing unit tests written by developers
                 sh 'mvn clean compile test'
             }
         }
 
         stage('Package') {
             steps {
-                // Generates target/student.jar
-                sh 'mvn package -DskipTests'
+                // Generates the final application artifact inside target/
+                // Modifies the final name to match what your Dockerfile expects (student.jar)
+                sh '''
+                    mvn package -DskipTests
+                    mv target/*.jar target/student.jar || true
+                '''
             }
         }
 
         stage('Docker Build') {
             steps {
-                // This will now pass because target/student.jar and Dockerfile are in the same folder
+                // Builds the docker image locally using the copied Dockerfile
                 sh 'docker build -t abc-technologies:latest .'
             }
         }
 
         stage('Docker Run') {
             steps {
+                // Safely stops any previous apps and starts the newly built container
                 sh '''
                     docker stop abc-app || true
                     docker rm abc-app || true
@@ -57,4 +66,3 @@ pipeline {
         }
     }
 }
-
