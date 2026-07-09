@@ -12,6 +12,6 @@ public class DemoApplication {
     }
     @GetMapping("/")
     public String home() {
-        return "DevOps Pipeline Active: Student REST API Verification Success.";
+        return "ABC-Technologies is Active.";
     }
 }
