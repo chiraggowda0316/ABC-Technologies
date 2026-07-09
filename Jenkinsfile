@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         // Matches your registered Jenkins tool name environment hint
-        maven 'maven3' 
+        maven 'Maven 3.x' 
     }
 
     stages {
